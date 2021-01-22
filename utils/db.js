@@ -11,6 +11,8 @@ class DBClient {
       if (!err) {
         // console.log('Connected successfully to server');
         this.db = client.db(DB_DATABASE);
+        this.usersCollection = this.db.collection('users');
+        this.filesCollection = this.db.collection('files');
       } else {
         console.log(err.message);
         this.db = false;
@@ -23,14 +25,12 @@ class DBClient {
   }
 
   async nbUsers() {
-    const usersCollection = this.db.collection('users');
-    const numberOfUsers = usersCollection.countDocuments();
+    const numberOfUsers = this.usersCollection.countDocuments();
     return numberOfUsers;
   }
 
   async nbFiles() {
-    const filesCollection = this.db.collection('files');
-    const numberOfFiles = filesCollection.countDocuments();
+    const numberOfFiles = this.filesCollection.countDocuments();
     return numberOfFiles;
   }
 }
