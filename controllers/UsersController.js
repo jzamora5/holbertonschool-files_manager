@@ -5,13 +5,15 @@ class UsersController {
   static async postNew(request, response) {
     const { email, password } = request.body;
 
-    if (!email) return response.status(400).send('Missing email');
+    if (!email) return response.status(400).send({ error: 'Missing email' });
 
-    if (!password) return response.status(400).send('Missing password');
+    if (!password)
+      return response.status(400).send({ error: 'Missing password' });
 
     const emailExists = await dbClient.usersCollection.findOne({ email });
 
-    if (emailExists) return response.status(400).send('Already exist');
+    if (emailExists)
+      return response.status(400).send({ error: 'Already exist' });
 
     const sha1Password = sha1(password);
 
@@ -25,7 +27,7 @@ class UsersController {
       email,
     };
 
-    return response.send(201, user);
+    return response.status(201).send(user);
   }
 }
 

@@ -7,7 +7,7 @@ class AppController {
       redis: redisClient.isAlive(),
       db: dbClient.isAlive(),
     };
-    response.send(200, status);
+    response.status(200).send(status);
   }
 
   static async getStats(request, response) {
@@ -15,7 +15,7 @@ class AppController {
       users: await dbClient.nbUsers(),
       files: await dbClient.nbFiles(),
     };
-    response.send(200, stats);
+    response.status(200).send(stats);
   }
 }
 
