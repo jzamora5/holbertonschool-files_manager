@@ -3,27 +3,26 @@ import { v4 as uuidv4 } from 'uuid';
 import sha1 from 'sha1';
 import dbClient from '../utils/db';
 import redisClient from '../utils/redis';
-import getUserIdAndKey from '../utils/user';
+import { getUserIdAndKey, getUser } from '../utils/user';
 
 class AuthController {
   static async getConnect(request, response) {
-    const Authorization = request.header('Authorization');
-
-    if (!Authorization) return response.status(401).send({ error: 'Unauthorized' });
+    const Authorization = request.header('Authorization') || '';
 
     const credentials = Authorization.split(' ')[1];
 
-    if (!credentials) return response.status(401).send({ error: 'Unauthorized' });
+    if (!credentials)
+      return response.status(401).send({ error: 'Unauthorized' });
 
     const decodedCredentials = Buffer.from(credentials, 'base64').toString(
-      'utf-8',
+      'utf-8'
     );
 
     const [email, password] = decodedCredentials.split(':');
 
     const sha1Password = sha1(password);
 
-    const user = await dbClient.usersCollection.findOne({
+    const user = await getUser({
       email,
       password: sha1Password,
     });
@@ -52,9 +51,7 @@ class AuthController {
   static async getMe(request, response) {
     const { userId } = await getUserIdAndKey(request);
 
-    if (!userId) return response.status(401).send({ error: 'Unauthorized' });
-
-    const user = await dbClient.usersCollection.findOne({
+    const user = await getUser({
       _id: ObjectId(userId),
     });
 

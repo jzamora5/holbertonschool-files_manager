@@ -1,4 +1,5 @@
 import redisClient from './redis';
+import dbClient from './db';
 
 async function getUserIdAndKey(request) {
   const obj = { userId: null, key: null };
@@ -14,4 +15,9 @@ async function getUserIdAndKey(request) {
   return obj;
 }
 
-export default getUserIdAndKey;
+async function getUser(query) {
+  const user = await dbClient.usersCollection.findOne(query);
+  return user;
+}
+
+export { getUserIdAndKey, getUser };
