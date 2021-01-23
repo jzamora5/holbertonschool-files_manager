@@ -1,9 +1,8 @@
 import { ObjectId } from 'mongodb';
 import { v4 as uuidv4 } from 'uuid';
 import sha1 from 'sha1';
-import dbClient from '../utils/db';
 import redisClient from '../utils/redis';
-import { getUserIdAndKey, getUser } from '../utils/user';
+import userUtils from '../utils/user';
 
 class AuthController {
   static async getConnect(request, response) {
@@ -11,18 +10,19 @@ class AuthController {
 
     const credentials = Authorization.split(' ')[1];
 
-    if (!credentials)
-      return response.status(401).send({ error: 'Unauthorized' });
+    if (!credentials) return response.status(401).send({ error: 'Unauthorized' });
 
     const decodedCredentials = Buffer.from(credentials, 'base64').toString(
-      'utf-8'
+      'utf-8',
     );
 
     const [email, password] = decodedCredentials.split(':');
 
+    if (!email || !password) return response.status(401).send({ error: 'Unauthorized' });
+
     const sha1Password = sha1(password);
 
-    const user = await getUser({
+    const user = await userUtils.getUser({
       email,
       password: sha1Password,
     });
@@ -39,7 +39,7 @@ class AuthController {
   }
 
   static async getDisconnect(request, response) {
-    const { userId, key } = await getUserIdAndKey(request);
+    const { userId, key } = await userUtils.getUserIdAndKey(request);
 
     if (!userId) return response.status(401).send({ error: 'Unauthorized' });
 
@@ -49,9 +49,9 @@ class AuthController {
   }
 
   static async getMe(request, response) {
-    const { userId } = await getUserIdAndKey(request);
+    const { userId } = await userUtils.getUserIdAndKey(request);
 
-    const user = await getUser({
+    const user = await userUtils.getUser({
       _id: ObjectId(userId),
     });
 
