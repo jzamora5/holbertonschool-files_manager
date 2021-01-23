@@ -44,8 +44,13 @@ const fileUtils = {
   },
 
   async getFile(query) {
-    const user = await dbClient.filesCollection.findOne(query);
-    return user;
+    const file = await dbClient.filesCollection.findOne(query);
+    return file;
+  },
+
+  async getFilesOfParentId(query) {
+    const fileList = await dbClient.filesCollection.aggregate(query);
+    return fileList;
   },
 
   async saveFile(userId, fileParams, FOLDER_PATH) {
