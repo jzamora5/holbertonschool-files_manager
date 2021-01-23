@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import sha1 from 'sha1';
 import dbClient from '../utils/db';
 import redisClient from '../utils/redis';
+import getUserIdAndKey from '../utils/user';
 
 class AuthController {
   static async getConnect(request, response) {
@@ -39,13 +40,7 @@ class AuthController {
   }
 
   static async getDisconnect(request, response) {
-    const xToken = request.header('X-Token');
-
-    if (!xToken) return response.status(401).send({ error: 'Unauthorized' });
-
-    const key = `auth_${xToken}`;
-
-    const userId = await redisClient.get(key);
+    const { userId, key } = await getUserIdAndKey(request);
 
     if (!userId) return response.status(401).send({ error: 'Unauthorized' });
 
@@ -55,19 +50,15 @@ class AuthController {
   }
 
   static async getMe(request, response) {
-    const xToken = request.header('X-Token');
-
-    if (!xToken) return response.status(401).send({ error: 'Unauthorized' });
-
-    const key = `auth_${xToken}`;
-
-    const userId = await redisClient.get(key);
+    const { userId } = await getUserIdAndKey(request);
 
     if (!userId) return response.status(401).send({ error: 'Unauthorized' });
 
     const user = await dbClient.usersCollection.findOne({
       _id: ObjectId(userId),
     });
+
+    if (!user) return response.status(401).send({ error: 'Unauthorized' });
 
     delete user.password;
 
