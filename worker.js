@@ -8,7 +8,7 @@ const imageThumbnail = require('image-thumbnail');
 
 const fileQueue = new Queue('fileQueue');
 
-fileQueue.process(async (job, done) => {
+fileQueue.process(async (job) => {
   const { fileId, userId } = job.data;
 
   // Delete bull keys in redis
@@ -18,14 +18,14 @@ fileQueue.process(async (job, done) => {
 
   if (!userId) throw new Error('Missing userId');
 
-  if (!basicUtils.isValidId(fileId)) done(new Error('File not found'));
+  if (!basicUtils.isValidId(fileId)) throw new Error('File not found');
 
   const file = await fileUtils.getFile({
     _id: ObjectId(fileId),
     userId,
   });
 
-  if (!file) done(new Error('File not found'));
+  if (!file) throw new Error('File not found');
 
   const { localPath } = file;
   const options = {};
