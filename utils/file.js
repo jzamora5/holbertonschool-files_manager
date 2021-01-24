@@ -3,11 +3,12 @@ import { v4 as uuidv4 } from 'uuid';
 import { promises as fsPromises } from 'fs';
 import dbClient from './db';
 import userUtils from './user';
+import basicUtils from './basic';
 
 const fileUtils = {
   async validateBody(request) {
     const {
-      name, type, parentId = 0, isPublic = false, data,
+      name, type, isPublic = false, parentId = 0, data,
     } = request.body;
     const typesAllowed = ['file', 'image', 'folder'];
     let msg = null;
@@ -18,7 +19,7 @@ const fileUtils = {
       msg = 'Missing type';
     } else if (!data && type !== 'folder') {
       msg = 'Missing data';
-    } else if (parentId) {
+    } else if (parentId && parentId !== '0') {
       const file = await this.getFile({
         _id: ObjectId(parentId),
       });
@@ -76,18 +77,21 @@ const fileUtils = {
 
       query.localPath = path;
 
-      await fsPromises.mkdir(FOLDER_PATH, { recursive: true });
-      await fsPromises.writeFile(path, fileDataDecoded);
+      try {
+        await fsPromises.mkdir(FOLDER_PATH, { recursive: true });
+        await fsPromises.writeFile(path, fileDataDecoded);
+      } catch (err) {
+        return { error: err.message, code: 400 };
+      }
     }
 
     const result = await dbClient.filesCollection.insertOne(query);
 
-    delete query._id;
-    delete query.localPath;
+    const file = this.processFile(query);
 
-    const newFile = { id: result.insertedId, ...query };
+    const newFile = { id: result.insertedId, ...file };
 
-    return newFile;
+    return { error: null, newFile };
   },
 
   async updateFile(query, set) {
@@ -101,6 +105,8 @@ const fileUtils = {
 
   async publishUnpublish(request, setPublish) {
     const { id: fileId } = request.params;
+
+    if (!basicUtils.isValidId(fileId)) return { error: 'Unauthorized', code: 401 };
 
     const { userId } = await userUtils.getUserIdAndKey(request);
 
@@ -144,6 +150,38 @@ const fileUtils = {
     };
 
     return { error: null, code: 200, updatedFile };
+  },
+
+  processFile(doc) {
+    // Changes _id for id and removes localPath
+
+    const file = { id: doc._id, ...doc };
+
+    delete file.localPath;
+    delete file._id;
+
+    return file;
+  },
+
+  isOwnerAndPublic(file, userId) {
+    if ((!file.isPublic && !userId) || (userId && file.userId !== userId)) return false;
+
+    return true;
+  },
+
+  async getFileData(file) {
+    const { localPath } = file;
+    let data;
+
+    try {
+      data = await fsPromises.readFile(localPath);
+      data = data.toString();
+    } catch (err) {
+      // console.log(err.message);
+      return { error: 'Not found', code: 404 };
+    }
+
+    return { data };
   },
 };
 
