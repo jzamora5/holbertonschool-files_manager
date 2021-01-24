@@ -1,9 +1,12 @@
 import { ObjectId } from 'mongodb';
 import { v4 as uuidv4 } from 'uuid';
 import { promises as fsPromises } from 'fs';
+import Queue from 'bull';
 import dbClient from './db';
 import userUtils from './user';
 import basicUtils from './basic';
+
+const fileQueue = new Queue('fileQueue');
 
 const fileUtils = {
   async validateBody(request) {
@@ -20,9 +23,15 @@ const fileUtils = {
     } else if (!data && type !== 'folder') {
       msg = 'Missing data';
     } else if (parentId && parentId !== '0') {
-      const file = await this.getFile({
-        _id: ObjectId(parentId),
-      });
+      let file;
+
+      if (basicUtils.isValidId(parentId)) {
+        file = await this.getFile({
+          _id: ObjectId(parentId),
+        });
+      } else {
+        file = null;
+      }
 
       if (!file) {
         msg = 'Parent not found';
@@ -71,7 +80,8 @@ const fileUtils = {
     if (fileParams.type !== 'folder') {
       const fileNameUUID = uuidv4();
 
-      const fileDataDecoded = Buffer.from(data, 'base64').toString('utf-8');
+      // const fileDataDecoded = Buffer.from(data, 'base64').toString('utf-8');
+      const fileDataDecoded = Buffer.from(data, 'base64');
 
       const path = `${FOLDER_PATH}/${fileNameUUID}`;
 
@@ -90,6 +100,13 @@ const fileUtils = {
     const file = this.processFile(query);
 
     const newFile = { id: result.insertedId, ...file };
+
+    if (fileParams.type === 'image') {
+      await fileQueue.add({
+        fileId: newFile.id,
+        userId: newFile.userId,
+      });
+    }
 
     return { error: null, newFile };
   },
@@ -169,13 +186,14 @@ const fileUtils = {
     return true;
   },
 
-  async getFileData(file) {
-    const { localPath } = file;
+  async getFileData(file, size) {
+    let { localPath } = file;
     let data;
+
+    if (size) localPath = `${localPath}_${size}`;
 
     try {
       data = await fsPromises.readFile(localPath);
-      data = data.toString();
     } catch (err) {
       // console.log(err.message);
       return { error: 'Not found', code: 404 };
@@ -186,3 +204,6 @@ const fileUtils = {
 };
 
 export default fileUtils;
+
+// python3 image_upload.py image.png $TOKEN 0
+// python3 image_upload.py image.png $TOKEN $PARENT
