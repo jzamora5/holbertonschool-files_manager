@@ -40,14 +40,17 @@ class FilesController {
     // if (fileId.length !== 12)
     //   return response.status(404).send({ error: 'Not found' });
 
-    const file = await fileUtils.getFile({
+    const result = await fileUtils.getFile({
       _id: ObjectId(fileId),
       userId,
     });
 
-    if (!file) return response.status(404).send({ error: 'Not found' });
+    if (!result) return response.status(404).send({ error: 'Not found' });
+
+    const file = { id: result._id, ...result };
 
     delete file.localPath;
+    delete file._id;
 
     return response.status(200).send(file);
   }
@@ -97,9 +100,27 @@ class FilesController {
     return response.status(200).send(fileList);
   }
 
-  static putPublish(request, response) {}
+  static async putPublish(request, response) {
+    const { error, code, updatedFile } = await fileUtils.publishUnpublish(
+      request,
+      true,
+    );
 
-  static putUnpublish(request, response) {}
+    if (error) return response.status(code).send({ error });
+
+    return response.status(code).send(updatedFile);
+  }
+
+  static async putUnpublish(request, response) {
+    const { error, code, updatedFile } = await fileUtils.publishUnpublish(
+      request,
+      false,
+    );
+
+    if (error) return response.status(code).send({ error });
+
+    return response.status(code).send(updatedFile);
+  }
 }
 
 export default FilesController;

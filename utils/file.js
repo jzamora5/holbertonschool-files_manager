@@ -2,6 +2,7 @@ import { ObjectId } from 'mongodb';
 import { v4 as uuidv4 } from 'uuid';
 import { promises as fsPromises } from 'fs';
 import dbClient from './db';
+import userUtils from './user';
 
 const fileUtils = {
   async validateBody(request) {
@@ -87,6 +88,62 @@ const fileUtils = {
     const newFile = { id: result.insertedId, ...query };
 
     return newFile;
+  },
+
+  async updateFile(query, set) {
+    const fileList = await dbClient.filesCollection.findOneAndUpdate(
+      query,
+      set,
+      { returnOriginal: false },
+    );
+    return fileList;
+  },
+
+  async publishUnpublish(request, setPublish) {
+    const { id: fileId } = request.params;
+
+    const { userId } = await userUtils.getUserIdAndKey(request);
+
+    const user = await userUtils.getUser({
+      _id: ObjectId(userId),
+    });
+
+    if (!user) return { error: 'Unauthorized', code: 401 };
+
+    const file = await this.getFile({
+      _id: ObjectId(fileId),
+      userId,
+    });
+
+    if (!file) return { error: 'Not found', code: 404 };
+
+    const result = await this.updateFile(
+      {
+        _id: ObjectId(fileId),
+        userId,
+      },
+      { $set: { isPublic: setPublish } },
+    );
+
+    const {
+      _id: id,
+      userId: resultUserId,
+      name,
+      type,
+      isPublic,
+      parentId,
+    } = result.value;
+
+    const updatedFile = {
+      id,
+      userId: resultUserId,
+      name,
+      type,
+      isPublic,
+      parentId,
+    };
+
+    return { error: null, code: 200, updatedFile };
   },
 };
 
