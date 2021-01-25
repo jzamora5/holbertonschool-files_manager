@@ -1,0 +1,2 @@
+import './appTests';
+import './userTests';
