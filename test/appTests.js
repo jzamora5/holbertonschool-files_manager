@@ -25,11 +25,6 @@ describe('testing App Status Endpoints', () => {
       await dbClient.filesCollection.deleteMany({});
     });
 
-    after(async () => {
-      await dbClient.usersCollection.deleteMany({});
-      await dbClient.filesCollection.deleteMany({});
-    });
-
     it('returns number of users and files in db 0 for this one', async () => {
       const response = await request(app).get('/stats').send();
       const body = JSON.parse(response.text);
