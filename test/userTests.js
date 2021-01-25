@@ -21,13 +21,13 @@ describe('testing User Endpoints', () => {
     password: 'toto1234!',
   };
 
+  before(async () => {
+    await dbClient.usersCollection.deleteMany({});
+    await dbClient.filesCollection.deleteMany({});
+  });
+
   // users
   describe('/users', () => {
-    before(async () => {
-      await dbClient.usersCollection.deleteMany({});
-      await dbClient.filesCollection.deleteMany({});
-    });
-
     it('returns the id and email of created user', async () => {
       const response = await request(app).post('/users').send(user);
       const body = JSON.parse(response.text);
