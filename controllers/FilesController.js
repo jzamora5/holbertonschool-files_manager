@@ -72,22 +72,26 @@ class FilesController {
 
     if (!user) return response.status(401).send({ error: 'Unauthorized' });
 
-    let parentId = request.query.parentId || 0;
+    let parentId = request.query.parentId || '0';
 
-    if (parentId === '0') parentId = 0;
+    // if (parentId === '0') parentId = 0;
 
     let page = Number(request.query.page) || 0;
 
     if (Number.isNaN(page)) page = 0;
 
-    if (parentId !== 0) {
+    if (parentId !== 0 && parentId !== '0') {
+      if (!basicUtils.isValidId(parentId)) return response.status(401).send({ error: 'Unauthorized' });
+
+      parentId = ObjectId(parentId);
+
       const folder = await fileUtils.getFile({
         _id: ObjectId(parentId),
       });
 
       if (!folder || folder.type !== 'folder') return response.status(200).send([]);
     }
-
+    console.log(typeof parentId);
     const pipeline = [
       { $match: { parentId } },
       { $skip: page * 20 },
