@@ -133,6 +133,8 @@ const fileUtils = {
 
     const { userId } = await userUtils.getUserIdAndKey(request);
 
+    if (!basicUtils.isValidId(userId)) return { error: 'Unauthorized', code: 401 };
+
     const user = await userUtils.getUser({
       _id: ObjectId(userId),
     });
@@ -141,7 +143,7 @@ const fileUtils = {
 
     const file = await this.getFile({
       _id: ObjectId(fileId),
-      userId,
+      userId: ObjectId(userId),
     });
 
     if (!file) return { error: 'Not found', code: 404 };
@@ -149,7 +151,7 @@ const fileUtils = {
     const result = await this.updateFile(
       {
         _id: ObjectId(fileId),
-        userId,
+        userId: ObjectId(userId),
       },
       { $set: { isPublic: setPublish } },
     );
