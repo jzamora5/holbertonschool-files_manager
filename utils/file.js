@@ -66,11 +66,14 @@ const fileUtils = {
 
   async saveFile(userId, fileParams, FOLDER_PATH) {
     const {
-      name, type, isPublic, parentId, data,
+      name, type, isPublic, data,
     } = fileParams;
+    let { parentId } = fileParams;
+
+    if (parentId !== 0) parentId = ObjectId(parentId);
 
     const query = {
-      userId,
+      userId: ObjectId(userId),
       name,
       type,
       isPublic,
@@ -96,6 +99,9 @@ const fileUtils = {
     }
 
     const result = await dbClient.filesCollection.insertOne(query);
+
+    // query.userId = query.userId.toString();
+    // query.parentId = query.parentId.toString();
 
     const file = this.processFile(query);
 
