@@ -146,6 +146,7 @@ class FilesController {
     });
 
     if (!file || !fileUtils.isOwnerAndPublic(file, userId)) return response.status(404).send({ error: 'Not found' });
+    console.log('=================');
 
     if (file.type === 'folder') {
       return response

@@ -189,7 +189,10 @@ const fileUtils = {
   },
 
   isOwnerAndPublic(file, userId) {
-    if ((!file.isPublic && !userId) || (userId && file.userId !== userId)) return false;
+    if (
+      (!file.isPublic && !userId)
+      || (userId && file.userId.toString() !== userId)
+    ) return false;
 
     return true;
   },
