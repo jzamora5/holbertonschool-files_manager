@@ -139,6 +139,7 @@ class FilesController {
     const size = request.query.size || 0;
 
     // Mongo Condition for Id
+    console.log('=================');
     if (!basicUtils.isValidId(fileId)) return response.status(404).send({ error: 'Not found' });
 
     const file = await fileUtils.getFile({
@@ -146,7 +147,6 @@ class FilesController {
     });
 
     if (!file || !fileUtils.isOwnerAndPublic(file, userId)) return response.status(404).send({ error: 'Not found' });
-    console.log('=================');
 
     if (file.type === 'folder') {
       return response
