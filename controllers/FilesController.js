@@ -74,7 +74,7 @@ class FilesController {
 
     let parentId = request.query.parentId || '0';
 
-    // if (parentId === '0') parentId = 0;
+    if (parentId === '0') parentId = 0;
 
     let page = Number(request.query.page) || 0;
 
