@@ -9,7 +9,7 @@ should();
 // General APP Endpoints ==============================================
 
 describe('testing App Status Endpoints', () => {
-  describe('/status', () => {
+  describe('GET /status', () => {
     it('returns the status of redis and mongo connection', async () => {
       const response = await request(app).get('/status').send();
       const body = JSON.parse(response.text);
@@ -19,7 +19,7 @@ describe('testing App Status Endpoints', () => {
     });
   });
 
-  describe('/stats', () => {
+  describe('GET /stats', () => {
     before(async () => {
       await dbClient.usersCollection.deleteMany({});
       await dbClient.filesCollection.deleteMany({});

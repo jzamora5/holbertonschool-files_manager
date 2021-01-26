@@ -5,7 +5,6 @@ import { ObjectId } from 'mongodb';
 import app from '../server';
 import dbClient from '../utils/db';
 import redisClient from '../utils/redis';
-import { RedisClient } from 'redis';
 
 use(chaiHttp);
 should();
@@ -22,12 +21,19 @@ describe('testing User Endpoints', () => {
   };
 
   before(async () => {
+    await redisClient.client.flushall('ASYNC');
+    await dbClient.usersCollection.deleteMany({});
+    await dbClient.filesCollection.deleteMany({});
+  });
+
+  after(async () => {
+    await redisClient.client.flushall('ASYNC');
     await dbClient.usersCollection.deleteMany({});
     await dbClient.filesCollection.deleteMany({});
   });
 
   // users
-  describe('/users', () => {
+  describe('POST /users', () => {
     it('returns the id and email of created user', async () => {
       const response = await request(app).post('/users').send(user);
       const body = JSON.parse(response.text);
@@ -76,7 +82,7 @@ describe('testing User Endpoints', () => {
 
   // Connect
 
-  describe('/connect', () => {
+  describe('GET /connect', () => {
     it('fails if no user is found for credentials', async () => {
       const response = await request(app).get('/connect').send();
       const body = JSON.parse(response.text);
@@ -110,7 +116,7 @@ describe('testing User Endpoints', () => {
 
   // Disconnect
 
-  describe('/disconnect', () => {
+  describe('GET /disconnect', () => {
     after(async () => {
       await redisClient.client.flushall('ASYNC');
     });
@@ -137,7 +143,7 @@ describe('testing User Endpoints', () => {
     });
   });
 
-  describe('/users/me', () => {
+  describe('GET /users/me', () => {
     before(async () => {
       const response = await request(app)
         .get('/connect')
@@ -145,10 +151,6 @@ describe('testing User Endpoints', () => {
         .send();
       const body = JSON.parse(response.text);
       token = body.token;
-    });
-
-    after(async () => {
-      await redisClient.client.flushall('ASYNC');
     });
 
     it('should return unauthorized because no token is passed', async () => {
