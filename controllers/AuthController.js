@@ -1,4 +1,3 @@
-import { ObjectId } from 'mongodb';
 import { v4 as uuidv4 } from 'uuid';
 import sha1 from 'sha1';
 import redisClient from '../utils/redis';
@@ -46,20 +45,6 @@ class AuthController {
     await redisClient.del(key);
 
     return response.status(204).send();
-  }
-
-  static async getMe(request, response) {
-    const { userId } = await userUtils.getUserIdAndKey(request);
-
-    const user = await userUtils.getUser({
-      _id: ObjectId(userId),
-    });
-
-    if (!user) return response.status(401).send({ error: 'Unauthorized' });
-
-    delete user.password;
-
-    return response.status(200).send(user);
   }
 }
 

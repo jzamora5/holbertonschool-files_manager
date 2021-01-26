@@ -24,6 +24,10 @@ function controllerRouting(app) {
     UsersController.postNew(req, res);
   });
 
+  router.get('/users/me', (req, res) => {
+    UsersController.getMe(req, res);
+  });
+
   // Auth Controller
 
   router.get('/connect', (req, res) => {
@@ -32,10 +36,6 @@ function controllerRouting(app) {
 
   router.get('/disconnect', (req, res) => {
     AuthController.getDisconnect(req, res);
-  });
-
-  router.get('/users/me', (req, res) => {
-    AuthController.getMe(req, res);
   });
 
   // Files Controller
