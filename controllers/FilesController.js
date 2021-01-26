@@ -49,7 +49,7 @@ class FilesController {
 
     const result = await fileUtils.getFile({
       _id: ObjectId(fileId),
-      userId,
+      // userId,
     });
 
     if (!result) return response.status(404).send({ error: 'Not found' });
