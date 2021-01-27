@@ -11,10 +11,15 @@ const fileQueue = new Queue('fileQueue');
 const fileUtils = {
   async validateBody(request) {
     const {
-      name, type, isPublic = false, parentId = 0, data,
+      name, type, isPublic = false, data,
     } = request.body;
+
+    let { parentId = 0 } = request.body;
+
     const typesAllowed = ['file', 'image', 'folder'];
     let msg = null;
+
+    if (parentId === '0') parentId = 0;
 
     if (!name) {
       msg = 'Missing name';
@@ -109,8 +114,8 @@ const fileUtils = {
 
     if (fileParams.type === 'image') {
       await fileQueue.add({
-        fileId: newFile.id,
-        userId: newFile.userId,
+        fileId: newFile.id.toString(),
+        userId: newFile.userId.toString(),
       });
     }
 

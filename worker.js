@@ -2,11 +2,13 @@ import Queue from 'bull';
 import { ObjectId } from 'mongodb';
 import { promises as fsPromises } from 'fs';
 import fileUtils from './utils/file';
+import userUtils from './utils/user';
 import basicUtils from './utils/basic';
 
 const imageThumbnail = require('image-thumbnail');
 
 const fileQueue = new Queue('fileQueue');
+const userQueue = new Queue('userQueue');
 
 fileQueue.process(async (job) => {
   const { fileId, userId } = job.data;
@@ -18,11 +20,11 @@ fileQueue.process(async (job) => {
 
   if (!userId) throw new Error('Missing userId');
 
-  if (!basicUtils.isValidId(fileId)) throw new Error('File not found');
+  if (!basicUtils.isValidId(fileId) || !basicUtils.isValidId(userId)) throw new Error('File not found');
 
   const file = await fileUtils.getFile({
     _id: ObjectId(fileId),
-    userId,
+    userId: ObjectId(userId),
   });
 
   if (!file) throw new Error('File not found');
@@ -41,4 +43,22 @@ fileQueue.process(async (job) => {
       console.error(err.message);
     }
   });
+});
+
+userQueue.process(async (job) => {
+  const { userId } = job.data;
+  // Delete bull keys in redis
+  //   redis-cli keys "bull*" | xargs redis-cli del
+
+  if (!userId) throw new Error('Missing userId');
+
+  if (!basicUtils.isValidId(userId)) throw new Error('User not found');
+
+  const user = await userUtils.getUser({
+    _id: ObjectId(userId),
+  });
+
+  if (!user) throw new Error('User not found');
+
+  console.log(`Welcome ${user.email}!`);
 });

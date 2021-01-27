@@ -1,7 +1,10 @@
 import { ObjectId } from 'mongodb';
 import sha1 from 'sha1';
+import Queue from 'bull';
 import dbClient from '../utils/db';
 import userUtils from '../utils/user';
+
+const userQueue = new Queue('userQueue');
 
 class UsersController {
   static async postNew(request, response) {
@@ -26,6 +29,10 @@ class UsersController {
       id: result.insertedId,
       email,
     };
+
+    await userQueue.add({
+      userId: result.insertedId.toString(),
+    });
 
     return response.status(201).send(user);
   }
