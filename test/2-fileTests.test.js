@@ -2,6 +2,7 @@ import { expect, use, should, request } from 'chai';
 import chaiHttp from 'chai-http';
 import sinon from 'sinon';
 import { ObjectId } from 'mongodb';
+import { exec } from 'child_process';
 import app from '../server';
 import dbClient from '../utils/db';
 import redisClient from '../utils/redis';
@@ -48,6 +49,15 @@ describe('testing File Endpoints', () => {
     await redisClient.client.flushall('ASYNC');
     await dbClient.usersCollection.deleteMany({});
     await dbClient.filesCollection.deleteMany({});
+    // Remove folder where files were created locally
+    exec('rm -rf /tmp/files_manager', (error, stdout, stderr) => {
+      if (error) {
+        return;
+      }
+      if (stderr) {
+        return;
+      }
+    });
   });
 
   describe('POST /files', () => {
@@ -608,5 +618,156 @@ describe('testing File Endpoints', () => {
       await dbClient.filesCollection.deleteMany({});
     });
   });
-  describe('GET /files/:id/data', () => {});
+  describe('GET /files/:id/data', () => {
+    it('returns Error Not Found because file is not linked to ID', async () => {
+      fileId = 'ASxWCefcv654';
+      const response = await request(app)
+        .get(`/files/${fileId}/data`)
+        .set('X-Token', token)
+        .send();
+
+      const body = JSON.parse(response.text);
+
+      expect(body).to.eql({ error: 'Not found' });
+      expect(response.statusCode).to.equal(404);
+    });
+
+    it('returns Error Not Found because file is not locally available', async () => {
+      const file = await dbClient.filesCollection.insertOne({
+        name: 'myText.txt',
+        type: 'file',
+        data: 'SGVsbG8gV2Vic3RhY2shCg==',
+        isPublic: false,
+        userId,
+        parentId: 0,
+      });
+
+      fileId = file.insertedId.toString();
+      const response = await request(app)
+        .get(`/files/${fileId}/data`)
+        .set('X-Token', token)
+        .send();
+
+      const body = JSON.parse(response.text);
+
+      expect(body).to.eql({ error: 'Not found' });
+      expect(response.statusCode).to.equal(404);
+    });
+
+    it('returns error with folder because it has no data', async () => {
+      const fileInfo = {
+        name: 'images',
+        type: 'folder',
+      };
+
+      let body;
+      let response;
+
+      response = await request(app)
+        .post('/files')
+        .set('X-Token', token)
+        .send(fileInfo);
+
+      body = JSON.parse(response.text);
+      fileId = body.id;
+
+      response = await request(app)
+        .get(`/files/${fileId}/data`)
+        .set('X-Token', token)
+        .send();
+
+      body = JSON.parse(response.text);
+
+      expect(body).to.eql({ error: "A folder doesn't have content" });
+      expect(response.statusCode).to.equal(400);
+    });
+
+    it('returns file data because it is not public but and user is not owner', async () => {
+      const fileInfo = {
+        name: 'myText.txt',
+        type: 'file',
+        data: 'SGVsbG8gV2Vic3RhY2shCg==',
+        isPublic: false,
+      };
+
+      let body;
+      let response;
+
+      response = await request(app)
+        .post('/files')
+        .set('X-Token', token)
+        .send(fileInfo);
+
+      body = JSON.parse(response.text);
+      fileId = body.id;
+
+      response = await request(app)
+        .get(`/files/${fileId}/data`)
+        .set('X-Token', 'asdwwx89716')
+        .send();
+
+      body = JSON.parse(response.text);
+
+      expect(body).to.eql({ error: 'Not found' });
+      expect(response.statusCode).to.equal(404);
+    });
+
+    it('returns file data because it is not public but user is owner', async () => {
+      const fileInfo = {
+        name: 'myText.txt',
+        type: 'file',
+        data: 'SGVsbG8gV2Vic3RhY2shCg==',
+        isPublic: false,
+      };
+
+      let body;
+      let response;
+
+      response = await request(app)
+        .post('/files')
+        .set('X-Token', token)
+        .send(fileInfo);
+
+      body = JSON.parse(response.text);
+      fileId = body.id;
+
+      response = await request(app)
+        .get(`/files/${fileId}/data`)
+        .set('X-Token', token)
+        .send();
+      expect(response.header['content-type']).to.be.equal(
+        'text/plain; charset=utf-8'
+      );
+      expect(response.text).to.equal('Hello Webstack!\n');
+      expect(response.statusCode).to.equal(200);
+    });
+
+    it('returns file data because it is public', async () => {
+      const fileInfo = {
+        name: 'myText.txt',
+        type: 'file',
+        data: 'SGVsbG8gV2Vic3RhY2shCg==',
+        isPublic: true,
+      };
+
+      let body;
+      let response;
+
+      response = await request(app)
+        .post('/files')
+        .set('X-Token', token)
+        .send(fileInfo);
+
+      body = JSON.parse(response.text);
+      fileId = body.id;
+
+      response = await request(app).get(`/files/${fileId}/data`).send();
+
+      expect(response.header['content-type']).to.be.equal(
+        'text/plain; charset=utf-8'
+      );
+      expect(response.text).to.equal('Hello Webstack!\n');
+      expect(response.statusCode).to.equal(200);
+    });
+  });
 });
