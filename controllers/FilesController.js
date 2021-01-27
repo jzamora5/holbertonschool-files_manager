@@ -91,7 +91,7 @@ class FilesController {
 
       if (!folder || folder.type !== 'folder') return response.status(200).send([]);
     }
-    console.log(typeof parentId);
+
     const pipeline = [
       { $match: { parentId } },
       { $skip: page * 20 },
