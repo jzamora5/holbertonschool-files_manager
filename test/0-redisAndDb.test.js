@@ -1,9 +1,6 @@
 import { expect, use, should } from 'chai';
 import chaiHttp from 'chai-http';
 import { promisify } from 'util';
-import sinon from 'sinon';
-import { ObjectId } from 'mongodb';
-import app from '../server';
 import dbClient from '../utils/db';
 import redisClient from '../utils/redis';
 
