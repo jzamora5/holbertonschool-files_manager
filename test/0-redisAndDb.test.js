@@ -10,13 +10,15 @@ should();
 // redisClient
 
 describe('Testing the clients for MongoDB and Redis', () => {
-  after(async () => {
-    await redisClient.client.flushall('ASYNC');
-    await dbClient.usersCollection.deleteMany({});
-    await dbClient.filesCollection.deleteMany({});
-  });
-
   describe('redis Client', () => {
+    before(async () => {
+      await redisClient.client.flushall('ASYNC');
+    });
+
+    after(async () => {
+      await redisClient.client.flushall('ASYNC');
+    });
+
     it('shows that connection is alive', async () => {
       expect(redisClient.isAlive()).to.equal(true);
     });
@@ -38,6 +40,15 @@ describe('Testing the clients for MongoDB and Redis', () => {
 
   // dbClient
   describe('db Client', () => {
+    before(async () => {
+      await dbClient.usersCollection.deleteMany({});
+      await dbClient.filesCollection.deleteMany({});
+    });
+    after(async () => {
+      await dbClient.usersCollection.deleteMany({});
+      await dbClient.filesCollection.deleteMany({});
+    });
+
     it('shows that connection is alive', () => {
       expect(dbClient.isAlive()).to.equal(true);
     });
