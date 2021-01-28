@@ -20,10 +20,16 @@ class UsersController {
 
     const sha1Password = sha1(password);
 
-    const result = await dbClient.usersCollection.insertOne({
-      email,
-      password: sha1Password,
-    });
+    let result;
+    try {
+      result = await dbClient.usersCollection.insertOne({
+        email,
+        password: sha1Password,
+      });
+    } catch (err) {
+      await userQueue.add({});
+      return response.status(500).send({ error: 'Error creating user' });
+    }
 
     const user = {
       id: result.insertedId,

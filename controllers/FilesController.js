@@ -1,16 +1,24 @@
 import { ObjectId } from 'mongodb';
 import mime from 'mime-types';
+import Queue from 'bull';
 import userUtils from '../utils/user';
 import fileUtils from '../utils/file';
 import basicUtils from '../utils/basic';
 
 const FOLDER_PATH = process.env.FOLDER_PATH || '/tmp/files_manager';
 
+const fileQueue = new Queue('fileQueue');
+
 class FilesController {
   static async postUpload(request, response) {
     const { userId } = await userUtils.getUserIdAndKey(request);
 
-    if (!basicUtils.isValidId(userId)) return response.status(401).send({ error: 'Unauthorized' });
+    if (!basicUtils.isValidId(userId)) {
+      return response.status(401).send({ error: 'Unauthorized' });
+    }
+    if (!userId && request.body.type === 'image') {
+      await fileQueue.add({});
+    }
 
     const user = await userUtils.getUser({
       _id: ObjectId(userId),
@@ -32,7 +40,17 @@ class FilesController {
       FOLDER_PATH,
     );
 
-    if (error) return response.status(code).send(error);
+    if (error) {
+      if (response.body.type === 'image') await fileQueue.add({ userId });
+      return response.status(code).send(error);
+    }
+
+    if (fileParams.type === 'image') {
+      await fileQueue.add({
+        fileId: newFile.id.toString(),
+        userId: newFile.userId.toString(),
+      });
+    }
 
     return response.status(201).send(newFile);
   }
