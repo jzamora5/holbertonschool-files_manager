@@ -33,7 +33,7 @@ describe('Testing the clients for MongoDB and Redis', () => {
 
     it('returns key with null because it expired', async () => {
       const sleep = promisify(setTimeout);
-      await sleep(1000);
+      await sleep(1100);
       expect(await redisClient.get('myKey')).to.equal(null);
     });
   });
