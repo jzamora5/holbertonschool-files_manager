@@ -1,12 +1,9 @@
 import { ObjectId } from 'mongodb';
 import { v4 as uuidv4 } from 'uuid';
 import { promises as fsPromises } from 'fs';
-import Queue from 'bull';
 import dbClient from './db';
 import userUtils from './user';
 import basicUtils from './basic';
-
-const fileQueue = new Queue('fileQueue');
 
 const fileUtils = {
   async validateBody(request) {
@@ -111,13 +108,6 @@ const fileUtils = {
     const file = this.processFile(query);
 
     const newFile = { id: result.insertedId, ...file };
-
-    if (fileParams.type === 'image') {
-      await fileQueue.add({
-        fileId: newFile.id.toString(),
-        userId: newFile.userId.toString(),
-      });
-    }
 
     return { error: null, newFile };
   },
