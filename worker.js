@@ -16,9 +16,15 @@ fileQueue.process(async (job) => {
   // Delete bull keys in redis
   //   redis-cli keys "bull*" | xargs redis-cli del
 
-  if (!fileId) throw new Error('Missing fileId');
+  if (!userId) {
+    console.log('Missing userId');
+    throw new Error('Missing userId');
+  }
 
-  if (!userId) throw new Error('Missing userId');
+  if (!fileId) {
+    console.log('Missing fileId');
+    throw new Error('Missing fileId');
+  }
 
   if (!basicUtils.isValidId(fileId) || !basicUtils.isValidId(userId)) throw new Error('File not found');
 
@@ -50,7 +56,10 @@ userQueue.process(async (job) => {
   // Delete bull keys in redis
   //   redis-cli keys "bull*" | xargs redis-cli del
 
-  if (!userId) throw new Error('Missing userId');
+  if (!userId) {
+    console.log('Missing userId');
+    throw new Error('Missing userId');
+  }
 
   if (!basicUtils.isValidId(userId)) throw new Error('User not found');
 
